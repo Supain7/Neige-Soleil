@@ -99,7 +99,10 @@ public class PanelUtilisateur extends PanelPrincipal implements ActionListener {
         this.txtRecherche.setPreferredSize(new Dimension(140, 20));
         this.panelRecherche.add(this.txtRecherche);
 
+        // Bouton
+        this.btRechercher.setText("Rechercher");
         this.btRechercher.setPreferredSize(new Dimension(105, 20));
+        this.btRechercher.setFont(new Font("Arial", Font.BOLD, 11)); // Police GRAS et compacte
         this.panelRecherche.add(this.btRechercher);
 
         // ==== TABLEAU UTILISATEURS ====

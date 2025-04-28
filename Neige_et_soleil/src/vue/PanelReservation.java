@@ -38,7 +38,7 @@ public class PanelReservation extends PanelPrincipal implements ActionListener {
             new LineBorder(Color.LIGHT_GRAY, 2),
             new EmptyBorder(15, 15, 15, 15)
         ));
-        this.panelForm.setBounds(30, 120, 400, 300); // agrandi un peu la hauteur pour caser tous les boutons
+        this.panelForm.setBounds(30, 120, 400, 260); // agrandi un peu la hauteur pour caser tous les boutons
         this.add(this.panelForm);
 
         // Panel pour les champs
@@ -161,9 +161,9 @@ public class PanelReservation extends PanelPrincipal implements ActionListener {
 
     public static void remplirIDLogements() {
         txtIdLogement.removeAllItems();
-        ArrayList<Logement> lesLogements = Controleur.selectAllLogements(); // ✅ ici corrigé
+        ArrayList<Logement> lesLogements = Controleur.selectAllLogements();
         for (Logement unLogement : lesLogements) {
-            txtIdLogement.addItem("(" + unLogement.getIdLogement() + ")" + " - " + unLogement.getNomImmeuble());
+            txtIdLogement.addItem(String.valueOf(unLogement.getIdLogement())); // conversion int -> String
         }
     }
 
@@ -172,10 +172,11 @@ public class PanelReservation extends PanelPrincipal implements ActionListener {
         ArrayList<Utilisateur> lesUtilisateurs = Controleur.selectAllUtilisateurs();
         for (Utilisateur unUtilisateur : lesUtilisateurs) {
             if (unUtilisateur.getRole().equals("client")) {
-                txtIdUtilisateur.addItem(unUtilisateur.getIdUtilisateur()+ " - " + unUtilisateur.getNom() + unUtilisateur.getPrenom());
+                txtIdUtilisateur.addItem(String.valueOf(unUtilisateur.getIdUtilisateur())); // conversion int -> String
             }
         }
     }
+
 
     @Override
     public void actionPerformed(ActionEvent e) {
