@@ -38,36 +38,53 @@ public class PanelReservation extends PanelPrincipal implements ActionListener {
             new LineBorder(Color.LIGHT_GRAY, 2),
             new EmptyBorder(15, 15, 15, 15)
         ));
-        this.panelForm.setBounds(30, 120, 400, 320);
+        this.panelForm.setBounds(30, 120, 400, 300); // agrandi un peu la hauteur pour caser tous les boutons
         this.add(this.panelForm);
 
-        JPanel panelCentre = new JPanel(new GridLayout(6, 2, 10, 10));
-        panelCentre.setBackground(new Color(245, 245, 245));
+        // Panel pour les champs
+        JPanel panelChamps = new JPanel(new GridLayout(5, 2, 10, 5));
+        panelChamps.setBackground(new Color(245, 245, 245));
 
-        panelCentre.add(new JLabel("Date Début :"));
-        panelCentre.add(this.txtDateDebut);
+        Dimension champTaille = new Dimension(0, 20);
 
-        panelCentre.add(new JLabel("Date Fin :"));
-        panelCentre.add(this.txtDateFin);
+        txtDateDebut.setPreferredSize(champTaille);
+        txtDateFin.setPreferredSize(champTaille);
+        txtStatut.setPreferredSize(champTaille);
+        txtIdUtilisateur.setPreferredSize(champTaille);
+        txtIdLogement.setPreferredSize(champTaille);
 
-        panelCentre.add(new JLabel("Statut :"));
-        panelCentre.add(this.txtStatut);
+        panelChamps.add(new JLabel("Date Début :"));
+        panelChamps.add(this.txtDateDebut);
 
-        panelCentre.add(new JLabel("Client :"));
-        panelCentre.add(this.txtIdUtilisateur);
+        panelChamps.add(new JLabel("Date Fin :"));
+        panelChamps.add(this.txtDateFin);
 
-        panelCentre.add(new JLabel("Logement :"));
-        panelCentre.add(this.txtIdLogement);
+        panelChamps.add(new JLabel("Statut :"));
+        panelChamps.add(this.txtStatut);
 
-        this.panelForm.add(panelCentre, BorderLayout.CENTER);
+        panelChamps.add(new JLabel("Client :"));
+        panelChamps.add(this.txtIdUtilisateur);
 
-        JPanel panelBoutons = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        panelChamps.add(new JLabel("Logement :"));
+        panelChamps.add(this.txtIdLogement);
+
+        // Panel pour les boutons
+        JPanel panelBoutons = new JPanel(new GridLayout(2, 2, 10, 10));
         panelBoutons.setBackground(new Color(245, 245, 245));
         panelBoutons.add(this.btAnnuler);
         panelBoutons.add(this.btValider);
         panelBoutons.add(this.btSupprimer);
         panelBoutons.add(this.btModifier);
-        this.panelForm.add(panelBoutons, BorderLayout.SOUTH);
+
+        // Créer un panel intermédiaire pour tout aligner verticalement
+        JPanel panelConteneur = new JPanel();
+        panelConteneur.setLayout(new BorderLayout(10, 10));
+        panelConteneur.setBackground(new Color(245, 245, 245));
+        panelConteneur.add(panelChamps, BorderLayout.CENTER);
+        panelConteneur.add(panelBoutons, BorderLayout.SOUTH);
+
+        // Ajouter le tout dans le panelForm
+        this.panelForm.add(panelConteneur, BorderLayout.CENTER);
 
         // ==== STYLISATION BOUTONS ====
         styliserBouton(this.btAnnuler);
@@ -155,7 +172,7 @@ public class PanelReservation extends PanelPrincipal implements ActionListener {
         ArrayList<Utilisateur> lesUtilisateurs = Controleur.selectAllUtilisateurs();
         for (Utilisateur unUtilisateur : lesUtilisateurs) {
             if (unUtilisateur.getRole().equals("client")) {
-                txtIdUtilisateur.addItem("(" + unUtilisateur.getIdUtilisateur() + ")" + " - " + unUtilisateur.getNom() + " " + unUtilisateur.getPrenom());
+                txtIdUtilisateur.addItem(unUtilisateur.getIdUtilisateur()+ " - " + unUtilisateur.getNom() + unUtilisateur.getPrenom());
             }
         }
     }
@@ -283,5 +300,8 @@ public class PanelReservation extends PanelPrincipal implements ActionListener {
         this.txtDateDebut.setText("");
         this.txtDateFin.setText("");
         this.txtStatut.setSelectedIndex(0);
+        this.txtIdUtilisateur.setSelectedIndex(-1); // 🔥 Ajout : remettre aucune sélection
+        this.txtIdLogement.setSelectedIndex(-1);    // 🔥 Ajout : remettre aucune sélection
     }
+
 }

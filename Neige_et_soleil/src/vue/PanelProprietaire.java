@@ -37,7 +37,7 @@ public class PanelProprietaire extends PanelPrincipal implements ActionListener 
             new LineBorder(Color.LIGHT_GRAY, 2),
             new EmptyBorder(15, 15, 15, 15) // marges internes
         ));
-        this.panelForm.setBounds(30, 120, 400, 250);
+        this.panelForm.setBounds(30, 120, 400, 200);
         this.add(this.panelForm);
 
         // Panel pour le titre
