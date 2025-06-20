@@ -1,18 +1,20 @@
 package modele;
 
-import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
+import org.mindrot.jbcrypt.BCrypt;
+
 import controleur.Logement;
-import controleur.Utilisateur;
 import controleur.Proprietaire;
 import controleur.Reservation;
+import controleur.Utilisateur;
 
 public class Modele {
-    private static Connexion uneConnexion = new Connexion("localhost:3306", "neigeetsoleil_v4", "root", "123abc");
+    private static Connexion uneConnexion = new Connexion("localhost:3310", "neigeetsoleil_v4", "root", "123abc");
 
     public static Connexion getConnexion() { 
         return uneConnexion;
@@ -22,12 +24,14 @@ public class Modele {
     /************************ GESTION DES UTILISATEURS **********************/
 
     public static void insertUtilisateur(Utilisateur unUtilisateur) {
+        String motDePasseHash = org.mindrot.jbcrypt.BCrypt.hashpw(unUtilisateur.getMotDePasse(), org.mindrot.jbcrypt.BCrypt.gensalt());
         String requete = "INSERT INTO utilisateur VALUES (null, '" + unUtilisateur.getNom()
                 + "','" + unUtilisateur.getPrenom() + "','" + unUtilisateur.getEmail()
-                + "','" + unUtilisateur.getMotDePasse() + "','" + unUtilisateur.getRole()
+                + "','" + motDePasseHash + "','" + unUtilisateur.getRole()
                 + "', NOW());";
         executerRequete(requete);
     }
+
 
     public static ArrayList<Utilisateur> selectAllUtilisateurs() {
         ArrayList<Utilisateur> lesUtilisateurs = new ArrayList<>();
@@ -61,14 +65,23 @@ public class Modele {
     }
 
     public static void updateUtilisateur(Utilisateur unUtilisateur) {
-        String requete = "UPDATE utilisateur SET nom = '" + unUtilisateur.getNom()
-                + "', prenom ='" + unUtilisateur.getPrenom()
-                + "', email ='" + unUtilisateur.getEmail()
-                + "', mot_de_passe ='" + unUtilisateur.getMotDePasse()
-                + "', role ='" + unUtilisateur.getRole()
-                + "' WHERE id_utilisateur = " + unUtilisateur.getIdUtilisateur() + " ;";
+        String requete = "UPDATE utilisateur SET "
+                + "nom = '" + unUtilisateur.getNom() + "', "
+                + "prenom = '" + unUtilisateur.getPrenom() + "', "
+                + "email = '" + unUtilisateur.getEmail() + "', "
+                + "role = '" + unUtilisateur.getRole() + "'";
+
+        if (unUtilisateur.getMotDePasse() != null && !unUtilisateur.getMotDePasse().isEmpty()) {
+            String motDePasseHash = BCrypt.hashpw(unUtilisateur.getMotDePasse(), BCrypt.gensalt());
+            requete += ", mot_de_passe = '" + motDePasseHash + "'";
+        }
+
+        requete += " WHERE id_utilisateur = " + unUtilisateur.getIdUtilisateur() + " ;";
+
         executerRequete(requete);
     }
+
+
 
     public static ArrayList<Utilisateur> selectLikeUtilisateurs(String filtre) {
         ArrayList<Utilisateur> lesUtilisateurs = new ArrayList<>();
@@ -100,41 +113,37 @@ public class Modele {
     }
 
     public static Utilisateur selectWhereUtilisateur(String email, String motDePasse) {
-        String requete = "SELECT * FROM utilisateur WHERE email = '" + email + "' AND mot_de_passe = '" + motDePasse + "';";
+        String requete = "SELECT * FROM utilisateur WHERE email = ?";
         Utilisateur unUtilisateur = null;
         try {
             uneConnexion.seConnecter();
-            Statement unStat = getConnexion().getMaConnexion().createStatement();
-            ResultSet unResultat = unStat.executeQuery(requete);
+            PreparedStatement unStat = getConnexion().getMaConnexion().prepareStatement(requete);
+            unStat.setString(1, email);
+            ResultSet unResultat = unStat.executeQuery();
             if (unResultat.next()) {
-                unUtilisateur = new Utilisateur(
+                String hash = unResultat.getString("mot_de_passe");
+                if (BCrypt.checkpw(motDePasse, hash)) {
+                    unUtilisateur = new Utilisateur(
                         unResultat.getInt("id_utilisateur"),
                         unResultat.getString("nom"),
                         unResultat.getString("prenom"),
                         unResultat.getString("email"),
-                        unResultat.getString("mot_de_passe"),
-                        unResultat.getString("role"), null
-                );
+                        hash,
+                        unResultat.getString("role"),
+                        null
+                    );
+                }
             }
             unStat.close();
             uneConnexion.seDeConnecter();
         } catch (SQLException exp) {
             System.out.println("Erreur d'exécution de la requête : " + requete);
+            exp.printStackTrace();
         }
         return unUtilisateur;
     }
 
-    public static void executerRequete(String requete) {
-        try {
-            uneConnexion.seConnecter();
-            Statement unStat = getConnexion().getMaConnexion().createStatement();
-            unStat.executeUpdate(requete);
-            unStat.close();
-            uneConnexion.seDeConnecter();
-        } catch (SQLException exp) {
-            System.out.println("Erreur d'exécution de la requête : " + requete);
-        }
-    }
+
 
     /************************ GESTION DES PROPRIÉTAIRES **********************/
 
@@ -414,7 +423,7 @@ public class Modele {
         String requete = "DELETE FROM reservation WHERE id_reservation = " + idReservation + " ;";
         executerRequete(requete);
     }
-    public static void executerRequete1(String requete) {
+    public static void executerRequete(String requete) {
         try {
             uneConnexion.seConnecter();
             Statement unStat = getConnexion().getMaConnexion().createStatement();

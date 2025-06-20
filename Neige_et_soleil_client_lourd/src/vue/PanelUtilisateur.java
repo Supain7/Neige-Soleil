@@ -11,17 +11,18 @@ import controleur.Tableau;
 
 public class PanelUtilisateur extends PanelPrincipal implements ActionListener {
 
-    private JPanel panelForm = new JPanel(); 
+    private JPanel panelForm = new JPanel();
     private JPanel panelRecherche = new JPanel();
 
-    private JTextField txtNom = new JTextField(); 
-    private JTextField txtPrenom = new JTextField(); 
-    private JTextField txtEmail = new JTextField(); 
-    private JTextField txtRole = new JTextField(); 
+    private JTextField txtNom = new JTextField();
+    private JTextField txtPrenom = new JTextField();
+    private JTextField txtEmail = new JTextField();
+    private JPasswordField txtMotDePasse = new JPasswordField(); // Nouveau champ
+    private JTextField txtRole = new JTextField();
     private JTextField txtRecherche = new JTextField(15);
 
-    private JButton btAnnuler = new JButton("Annuler"); 
-    private JButton btValider = new JButton("Valider"); 
+    private JButton btAnnuler = new JButton("Annuler");
+    private JButton btValider = new JButton("Valider");
     private JButton btSupprimer = new JButton("Supprimer");
     private JButton btModifier = new JButton("Modifier");
     private JButton btRechercher = new JButton("Rechercher");
@@ -39,11 +40,11 @@ public class PanelUtilisateur extends PanelPrincipal implements ActionListener {
             new LineBorder(Color.LIGHT_GRAY, 2),
             new EmptyBorder(15, 15, 15, 15)
         ));
-        this.panelForm.setBounds(30, 120, 400, 250); // Hauteur augmentée
+        this.panelForm.setBounds(30, 120, 400, 300); // Augmenter la hauteur
         this.add(this.panelForm);
 
         // Panel pour les champs
-        JPanel panelChamps = new JPanel(new GridLayout(4, 2, 10, 10));
+        JPanel panelChamps = new JPanel(new GridLayout(5, 2, 10, 10)); // 5 lignes
         panelChamps.setBackground(new Color(245, 245, 245));
 
         panelChamps.add(new JLabel("Nom :"));
@@ -54,6 +55,9 @@ public class PanelUtilisateur extends PanelPrincipal implements ActionListener {
 
         panelChamps.add(new JLabel("Email :"));
         panelChamps.add(this.txtEmail);
+
+        panelChamps.add(new JLabel("Mot de passe :"));
+        panelChamps.add(this.txtMotDePasse);
 
         panelChamps.add(new JLabel("Rôle :"));
         panelChamps.add(this.txtRole);
@@ -99,10 +103,8 @@ public class PanelUtilisateur extends PanelPrincipal implements ActionListener {
         this.txtRecherche.setPreferredSize(new Dimension(140, 20));
         this.panelRecherche.add(this.txtRecherche);
 
-        // Bouton
-        this.btRechercher.setText("Rechercher");
         this.btRechercher.setPreferredSize(new Dimension(105, 20));
-        this.btRechercher.setFont(new Font("Arial", Font.BOLD, 11)); // Police GRAS et compacte
+        this.btRechercher.setFont(new Font("Arial", Font.BOLD, 11));
         this.panelRecherche.add(this.btRechercher);
 
         // ==== TABLEAU UTILISATEURS ====
@@ -120,7 +122,6 @@ public class PanelUtilisateur extends PanelPrincipal implements ActionListener {
         this.btSupprimer.addActionListener(this);
         this.btModifier.addActionListener(this);
 
-        // ==== CLIC SUR LIGNE TABLE ====
         this.tableUtilisateurs.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -130,6 +131,7 @@ public class PanelUtilisateur extends PanelPrincipal implements ActionListener {
                     txtPrenom.setText(tableUtilisateurs.getValueAt(selectedRow, 2).toString());
                     txtEmail.setText(tableUtilisateurs.getValueAt(selectedRow, 3).toString());
                     txtRole.setText(tableUtilisateurs.getValueAt(selectedRow, 4).toString());
+                    txtMotDePasse.setText(""); // On ne remplit PAS le mot de passe
                 }
             }
         });
@@ -137,7 +139,7 @@ public class PanelUtilisateur extends PanelPrincipal implements ActionListener {
 
     private void styliserBouton(JButton bouton) {
         bouton.setFocusPainted(false);
-        bouton.setBackground(new Color(100, 149, 237)); 
+        bouton.setBackground(new Color(100, 149, 237));
         bouton.setForeground(Color.WHITE);
         bouton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         bouton.setFont(new Font("Arial", Font.BOLD, 14));
@@ -147,16 +149,24 @@ public class PanelUtilisateur extends PanelPrincipal implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == this.btAnnuler) {
             this.viderChamps();
-        }
-        else if (e.getSource() == this.btValider) {
+        } else if (e.getSource() == this.btValider) {
             ArrayList<String> lesChamps = new ArrayList<>();
             lesChamps.add(this.txtNom.getText());
             lesChamps.add(this.txtPrenom.getText());
             lesChamps.add(this.txtEmail.getText());
+            lesChamps.add(new String(this.txtMotDePasse.getPassword())); // ajout mot de passe
             lesChamps.add(this.txtRole.getText());
 
             if (Controleur.verifDonnees(lesChamps)) {
-                Utilisateur unUtilisateur = new Utilisateur(0, txtNom.getText(), txtPrenom.getText(), txtEmail.getText(), "default", txtRole.getText(), null);
+                Utilisateur unUtilisateur = new Utilisateur(
+                    0,
+                    txtNom.getText(),
+                    txtPrenom.getText(),
+                    txtEmail.getText(),
+                    new String(this.txtMotDePasse.getPassword()),
+                    txtRole.getText(),
+                    null
+                );
                 Controleur.insertUtilisateur(unUtilisateur);
                 JOptionPane.showMessageDialog(this, "Insertion réussie de l'utilisateur.", "Insertion Utilisateur", JOptionPane.INFORMATION_MESSAGE);
                 actualiserTableau();
@@ -164,11 +174,9 @@ public class PanelUtilisateur extends PanelPrincipal implements ActionListener {
             } else {
                 JOptionPane.showMessageDialog(this, "Veuillez remplir tous les champs.", "Erreur de saisie", JOptionPane.ERROR_MESSAGE);
             }
-        }
-        else if (e.getSource() == this.btRechercher) {
+        } else if (e.getSource() == this.btRechercher) {
             actualiserTableau();
-        }
-        else if (e.getSource() == this.btSupprimer) {
+        } else if (e.getSource() == this.btSupprimer) {
             int selectedRow = this.tableUtilisateurs.getSelectedRow();
             if (selectedRow >= 0) {
                 int idUtilisateur = Integer.parseInt(this.tableUtilisateurs.getValueAt(selectedRow, 0).toString());
@@ -179,13 +187,19 @@ public class PanelUtilisateur extends PanelPrincipal implements ActionListener {
             } else {
                 JOptionPane.showMessageDialog(this, "Veuillez sélectionner un utilisateur à supprimer.", "Erreur de sélection", JOptionPane.ERROR_MESSAGE);
             }
-        }
-        else if (e.getSource() == this.btModifier) {
+        } else if (e.getSource() == this.btModifier) {
             int selectedRow = this.tableUtilisateurs.getSelectedRow();
             if (selectedRow >= 0) {
                 int idUtilisateur = Integer.parseInt(this.tableUtilisateurs.getValueAt(selectedRow, 0).toString());
+                String nouveauMotDePasse = new String(this.txtMotDePasse.getPassword());
                 Utilisateur unUtilisateur = new Utilisateur(
-                        idUtilisateur, txtNom.getText(), txtPrenom.getText(), txtEmail.getText(), "default", txtRole.getText(), null
+                    idUtilisateur,
+                    txtNom.getText(),
+                    txtPrenom.getText(),
+                    txtEmail.getText(),
+                    nouveauMotDePasse.isEmpty() ? null : nouveauMotDePasse, // null si champ vide
+                    txtRole.getText(),
+                    null
                 );
                 Controleur.updateUtilisateur(unUtilisateur);
                 JOptionPane.showMessageDialog(this, "Modification réussie de l'utilisateur.", "Modification", JOptionPane.INFORMATION_MESSAGE);
@@ -229,6 +243,7 @@ public class PanelUtilisateur extends PanelPrincipal implements ActionListener {
         this.txtNom.setText("");
         this.txtPrenom.setText("");
         this.txtEmail.setText("");
+        this.txtMotDePasse.setText("");
         this.txtRole.setText("");
     }
 }

@@ -28,7 +28,7 @@ app.use((req, res, next) => {
 
 
 // ✅ Sert les fichiers statiques depuis le bon dossier
-app.use('/assets', express.static('C:/Users/nabil/workspace/NeigeEtSoleil_V4/Frontend/Append/assets'));
+//app.use('/assets', express.static('C:/Users/nabil/workspace/NeigeEtSoleil_V4/Frontend/Append/assets'));
     
 
 
@@ -39,6 +39,8 @@ app.use(cors({
     methods: ["GET", "POST", "PUT", "DELETE"], // Méthodes autorisées
     credentials: true // Si tu as besoin d'envoyer des cookies
 }));
+
+app.use(express.static(path.join(__dirname, "..", "..", "Frontend", "Append")));
 
 // Import des routes
 const inscriptionRoute = require("./routes/inscription"); // Corrige le chemin relatif
@@ -57,9 +59,15 @@ app.use("/NeigeEtSoleil_V4/activites", activitesRoutes);
 app.use("/NeigeEtSoleil_V4/stats", statsRoutes);
 app.use("/NeigeEtSoleil_V4/images-api", imageRoutes); 
 
-app.use('/NeigeEtSoleil_V4/images/habitation', express.static('C:/Users/nabil/workspace/NeigeEtSoleil_V4/Frontend/Append/assets/img/habitation'));
-app.use('/NeigeEtSoleil_V4/images/activite', express.static('C:/Users/nabil/workspace/NeigeEtSoleil_V4/Frontend/Append/assets/img/activite'));
-app.use('/NeigeEtSoleil_V4/contrats', express.static(path.join(__dirname, 'src/Contrats')));
+app.use('/NeigeEtSoleil_V4/images/habitation', express.static(path.join(__dirname, '..', '..', 'Frontend', 'Append', 'assets', 'img', 'habitation')));
+app.use('/NeigeEtSoleil_V4/images/activite', express.static(path.join(__dirname, '..', '..', 'Frontend', 'Append', 'assets', 'img', 'activite')));
+
+app.use('/NeigeEtSoleil_V4/contrats', express.static(path.join(__dirname, 'Contrats')));
+
+// Route d'accueil pour éviter le 404 sur localhost:3000/
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "..", "Frontend", "Append", "index.html"));
+});
 
 // Gestion des erreurs pour les routes inexistantes
 app.use((req, res) => {

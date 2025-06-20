@@ -1,3 +1,5 @@
+console.log("🔥 Fichier main.js REEL exécuté !");
+
 (function () {
   "use strict";
 
@@ -172,7 +174,7 @@
  */
 function handleIndexPage() {
   console.log("📌 handleIndexPage est bien exécutée !");
-  
+
   const formLogin = document.getElementById("formLogin");
   const welcomeMessage = document.querySelector("#welcomeMessage");
   const btnSeConnecter = document.getElementById("btnSeConnecter");
@@ -180,15 +182,23 @@ function handleIndexPage() {
 
   // 🔑 Gestion du formulaire de connexion
   if (formLogin) {
+    console.log("🟢 formLogin =", formLogin);
     formLogin.addEventListener("submit", async (e) => {
       e.preventDefault();
+      console.log("🟢 Interception OK");
+
       const loginData = {
         email: document.getElementById("loginEmail").value,
         mot_de_passe: document.getElementById("loginPassword").value,
       };
 
+      // 🌐 URL dynamique pour dev + hébergement
+      const baseUrl = window.location.origin.includes("localhost")
+        ? "http://localhost:3000"
+        : window.location.origin;
+
       try {
-        const response = await fetch("http://localhost:3000/NeigeEtSoleil_V4/login", {
+        const response = await fetch(`${baseUrl}/NeigeEtSoleil_V4/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(loginData),
@@ -201,8 +211,9 @@ function handleIndexPage() {
           alert(`Bienvenue ${data.utilisateur.nom} ${data.utilisateur.prenom} !`);
           localStorage.setItem("user", JSON.stringify(data.utilisateur));
           localStorage.setItem("userRole", data.utilisateur.role);
-          updateAuthButtons(true); // Mise à jour des boutons après connexion
+          updateAuthButtons(true);
           window.location.href = "index.html";
+          console.log("✅ DEBUG après login : utilisateur sauvegardé →", data.utilisateur);
         } else {
           throw new Error("Utilisateur non trouvé");
         }
@@ -213,7 +224,7 @@ function handleIndexPage() {
     });
   }
 
-  // 📢 Message de bienvenue pour l'utilisateur connecté
+  // 📢 Message de bienvenue
   if (welcomeMessage) {
     const user = JSON.parse(localStorage.getItem("user"));
     if (user) {
@@ -221,7 +232,7 @@ function handleIndexPage() {
     }
   }
 
-  // 🔄 Mise à jour des boutons connexion/déconnexion
+  // 🔄 Mise à jour des boutons
   function updateAuthButtons(isLoggedIn) {
     if (isLoggedIn) {
       btnSeConnecter.textContent = "Se déconnecter";
@@ -241,11 +252,10 @@ function handleIndexPage() {
     }
   }
 
-  // Initialisation des boutons en fonction de l'état de connexion
   const user = JSON.parse(localStorage.getItem("user"));
   updateAuthButtons(!!user);
 
-  // 🔗 Redirection selon le rôle utilisateur pour le lien "Logements"
+  // 🔗 Redirection conditionnelle
   const locationLogementsDiv = document.getElementById("location-logements");
   if (locationLogementsDiv) {
     const stretchedLink = locationLogementsDiv.querySelector(".stretched-link");
@@ -275,7 +285,46 @@ function handleIndexPage() {
     }
   }
 
-  // 🎯 Gestion du lien "Activités" : Redirection selon le rôle
+  const guidesTouristiquesLink = document.getElementById("guidesTouristiquesLink");
+  if (guidesTouristiquesLink) {
+    guidesTouristiquesLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user) {
+        alert("Vous devez être connecté pour accéder à cette fonctionnalité.");
+        return;
+      }
+
+      if (user.role === "client" || user.role === "proprietaire") {
+        window.location.href = "services-details.html";
+      } else if (user.role === "admin") {
+        window.location.href = "gestion_reservations.html";
+      } else {
+        alert("Rôle utilisateur inconnu !");
+      }
+    });
+  }
+
+  const assistanceLink = document.getElementById("assistanceLink");
+
+if (assistanceLink) {
+  assistanceLink.addEventListener("click", (e) => {
+    e.preventDefault();
+
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (user?.role === "admin") {
+      // Redirection spéciale pour les admins
+      window.location.href = "dashboard.html";
+    } else {
+      // Redirection pour clients, propriétaires, ou même non connectés
+      window.location.href = "index.html#contact";
+    }
+  });
+}
+
+
+  // 🎯 Lien "Activités"
   const activitesLink = document.getElementById("activitesLink");
   if (activitesLink) {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -283,6 +332,7 @@ function handleIndexPage() {
     activitesLink.setAttribute("href", userRole === "admin" ? "activites_admin.html" : "activites.html");
   }
 }
+
 
 /**
  * 🏢 Gestion de la page add-habitation.html
@@ -370,7 +420,7 @@ async function fetchAndDisplayLogements() {
       console.error("❌ L'utilisateur dans localStorage ne contient pas 'id_utilisateur'");
       alert("Erreur : utilisateur non trouvé. Veuillez vous reconnecter.");
       localStorage.removeItem("user");
-      window.location.href = "index.html";
+      window.location.href = "/index.html";
       return;
     }
 
@@ -380,7 +430,7 @@ async function fetchAndDisplayLogements() {
       console.error("❌ ID du propriétaire est invalide :", proprietaire.id_utilisateur);
       alert("Erreur : ID du propriétaire est invalide. Veuillez vous reconnecter.");
       localStorage.removeItem("user");
-      window.location.href = "index.html";
+      window.location.href = "/index.html";
       return;
     }
 
@@ -543,9 +593,19 @@ function createLogementCard(logement) {
     ? `http://localhost:3000/assets/img/habitation/${logement.photo}` 
     : "http://localhost:3000/assets/img/habitation/default.jpg";
 
-  const saisonsHTML = logement.saisons.map(saison => `
-      <li>${saison.jours} jours en ${saison.saison} (Prix: ${saison.prix_par_nuit}€/nuit)</li>
-  `).join("");
+  const prixAffiche = logement.prix_total > 0 
+    ? `<strong>Prix Total :</strong> ${logement.prix_total.toLocaleString("fr-FR")} €<br>` 
+    : `<span class="text-muted fst-italic">Prix affiché après choix des dates</span><br>`;
+
+  const saisonsHTML = (logement.saisons && logement.saisons.length > 0)
+    ? `
+      <strong>Répartition des saisons :</strong>
+      <ul>
+        ${logement.saisons.map(saison => `
+          <li>${saison.jours} jours en ${saison.saison} (Prix: ${saison.prix_par_nuit}€/nuit)</li>
+        `).join("")}
+      </ul>`
+    : "";
 
   return `
     <div class="card mb-3">
@@ -560,9 +620,8 @@ function createLogementCard(logement) {
               <strong>Adresse :</strong> ${logement.adresse}<br>
               <strong>Ville :</strong> ${logement.ville}<br>
               <strong>Type :</strong> ${logement.type_logement}<br>
-              <strong>Prix Total :</strong> ${logement.prix_total} €<br>
-              <strong>Répartition des saisons :</strong>
-              <ul>${saisonsHTML}</ul>
+              ${prixAffiche}
+              ${saisonsHTML}
             </p>
             <button class="btn btn-success reserver-btn" data-id-logement="${logement.id_logement}" data-prix="${logement.prix_total}">Réserver</button>
           </div>
@@ -572,107 +631,114 @@ function createLogementCard(logement) {
   `;
 }
 
+
   
   /**
    * 🛏️ Gestion de la réservation via modal
    */
   function handleReservation(event) {
-    const idLogement = event.target.dataset.idLogement;
-    const prixParJour = parseFloat(event.target.dataset.prix);
-  
-    if (isNaN(prixParJour) || prixParJour <= 0) {
-      alert("Le prix par jour est incorrect ou manquant.");
-      return;
-    }
-  
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user) {
-      alert("Vous devez être connecté pour effectuer une réservation !");
-      return;
-    }
-  
-    document.getElementById("modalNom").value = user.nom || "";
-    document.getElementById("modalPrenom").value = user.prenom || "";
-    document.getElementById("modalEmail").value = user.email || "";
-    document.getElementById("modalLogementId").value = idLogement;
-  
-    const dateDebut = document.getElementById("dateDebut").value;
-    const dateFin = document.getElementById("dateFin").value;
-    document.getElementById("modalDateDebut").value = dateDebut || "";
-    document.getElementById("modalDateFin").value = dateFin || "";
-  
-    calculateTotalPrice(dateDebut, dateFin, prixParJour);
-  
-    const reservationModal = new bootstrap.Modal(document.getElementById("reservationModal"));
-    reservationModal.show();
-  
-    const reservationForm = document.getElementById("reservationForm");
-    reservationForm.onsubmit = async (submitEvent) => {
-      submitEvent.preventDefault();
-      if (!document.getElementById("modalDateDebut").value || !document.getElementById("modalDateFin").value) {
-        alert("Veuillez renseigner les dates de début et de fin !");
-        return;
-      }
-      await confirmReservation(user, idLogement, reservationModal);
-    };
+  const idLogement = event.target.dataset.idLogement;
+  const prixTotal = parseFloat(event.target.dataset.prix); // ✅ C'est déjà le prix total
+
+  if (isNaN(prixTotal) || prixTotal <= 0) {
+    alert("Le prix total est incorrect ou manquant.");
+    return;
   }
-  
-  function calculateTotalPrice(dateDebut, dateFin, prixParJour) {
-    const prixTotalInput = document.getElementById("prixTotal");
-  
-    if (!prixTotalInput) {
-      console.error("❌ L'élément avec l'ID 'prixTotal' est introuvable.");
+
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (!user) {
+    alert("Vous devez être connecté pour effectuer une réservation !");
+    return;
+  }
+
+  document.getElementById("modalNom").value = user.nom || "";
+  document.getElementById("modalPrenom").value = user.prenom || "";
+  document.getElementById("modalEmail").value = user.email || "";
+  document.getElementById("modalLogementId").value = idLogement;
+
+  const dateDebut = document.getElementById("dateDebut").value;
+  const dateFin = document.getElementById("dateFin").value;
+  document.getElementById("modalDateDebut").value = dateDebut || "";
+  document.getElementById("modalDateFin").value = dateFin || "";
+
+  // ✅ Affecter directement le prix total calculé
+  const prixTotalInput = document.getElementById("prixTotal");
+  if (prixTotalInput) {
+    prixTotalInput.value = prixTotal.toLocaleString("fr-FR") + " €";
+  }
+
+  const reservationModal = new bootstrap.Modal(document.getElementById("reservationModal"));
+  reservationModal.show();
+
+  const reservationForm = document.getElementById("reservationForm");
+  reservationForm.onsubmit = async (submitEvent) => {
+    submitEvent.preventDefault();
+    if (!document.getElementById("modalDateDebut").value || !document.getElementById("modalDateFin").value) {
+      alert("Veuillez renseigner les dates de début et de fin !");
       return;
     }
-  
-    if (dateDebut && dateFin) {
-      const startDate = new Date(dateDebut);
-      const endDate = new Date(dateFin);
-  
-      if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime()) && endDate >= startDate) {
-        const nbJours = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;  // Inclure le jour de début
-        const prixTotal = nbJours * prixParJour;
-        prixTotalInput.value = `${prixTotal.toFixed(2)} €`;
-      } else {
-        prixTotalInput.value = "Dates invalides";
-      }
-    } else {
-      prixTotalInput.value = "Erreur dans les dates";
-    }
-  }
+    await confirmReservation(user, idLogement, reservationModal);
+  };
+}
+
   
   
   /**
    * 🛡️ Confirmation de la réservation
    */
-  async function confirmReservation(user, idLogement, reservationModal) {
-    const dateDebut = document.getElementById("modalDateDebut").value;
-    const dateFin = document.getElementById("modalDateFin").value;
+ async function confirmReservation(user, idLogement, reservationModal) {
+  const dateDebut = document.getElementById("modalDateDebut").value;
+  const dateFin = document.getElementById("modalDateFin").value;
 
-    const reservationData = {
-      id_utilisateur: user.id_utilisateur,
-      id_logement: idLogement,
-      date_debut: dateDebut,
-      date_fin: dateFin,
-    };
+  const reservationData = {
+    id_utilisateur: user.id_utilisateur,
+    id_logement: idLogement,
+    date_debut: dateDebut,
+    date_fin: dateFin,
+  };
 
-    try {
-      const response = await fetch("http://localhost:3000/NeigeEtSoleil_V4/disponibilites/reservation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(reservationData),
-      });
+  try {
+    const response = await fetch("http://localhost:3000/NeigeEtSoleil_V4/disponibilites/reservation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(reservationData),
+    });
 
-      if (!response.ok) throw new Error("Erreur lors de la réservation.");
-      alert("Réservation confirmée !");
-      reservationModal.hide();
-      window.location.reload();
-    } catch (error) {
-      console.error("❌ Erreur lors de la réservation :", error);
-      alert("Impossible d'effectuer la réservation.");
+    const result = await response.json();
+
+    if (![200, 201].includes(response.status)) {
+      console.error("⛔ Réponse du serveur :", result);
+      throw new Error(result?.error || "Erreur inconnue");
     }
-  }
 
+    // ✅ Cacher la modale immédiatement
+    reservationModal.hide();
+
+    // ✅ Afficher le toast sans autohide, sans délai
+    const toastEl = document.getElementById("neigeToast");
+    if (toastEl) {
+      // Supprimer les classes "fade" et "hide" si elles existent
+      toastEl.classList.remove("fade", "hide");
+
+      // Ajouter manuellement la classe "show"
+      toastEl.classList.add("show");
+
+      // Initialiser et afficher le toast sans autohide
+      const toast = new bootstrap.Toast(toastEl, {
+        autohide: false
+      });
+      toast.show();
+    } else {
+      alert("Réservation confirmée !");
+    }
+
+    // ❌ Ne pas recharger la page tout de suite
+    // Attends un clic utilisateur ou laisse le toast actif
+  } catch (error) {
+    console.error("❌ Erreur lors de la réservation :", error);
+    alert("Impossible d'effectuer la réservation.");
+  }
+}
 
   btnMesReservations.addEventListener("click", async () => {
     const user = JSON.parse(localStorage.getItem("user"));

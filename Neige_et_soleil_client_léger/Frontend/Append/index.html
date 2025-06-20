@@ -11,6 +11,8 @@
   <!-- Favicons -->
   <link href="assets/img/favicon.png" rel="icon">
   <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com" rel="preconnect">
@@ -301,7 +303,9 @@
             <div class="service-item d-flex">
               <div class="icon flex-shrink-0"><i class="bi bi-map"></i></div>
               <div>
-                <h4 class="title"><a href="services-details.html" class="stretched-link">Guides touristiques</a></h4>
+                <h4 class="title"><a id="guidesTouristiquesLink" href="services-details.html" class="stretched-link">Guides touristiques</a></h4>
+
+
                 <p class="description">Explorez les environs grâce à nos guides expérimentés qui vous feront découvrir des paysages uniques.</p>
               </div>
             </div>
@@ -323,7 +327,7 @@
             <div class="service-item d-flex">
               <div class="icon flex-shrink-0"><i class="bi bi-headset"></i></div>
               <div>
-                <h4 class="title"><a href="services-details.html" class="stretched-link">Assistance 24/7</a></h4>
+                <h4 class="title"><a id="assistanceLink" href="services-details.html" class="stretched-link">Assistance 24/7</a></h4>
                 <p class="description">Bénéficiez d'une assistance complète tout au long de votre séjour, disponible 24 heures sur 24.</p>
               </div>
             </div>
@@ -960,7 +964,8 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
         </div>
         <div class="modal-body">
-          <form id="formLogin" method="post">
+        <form id="formLogin" action="javascript:void(0);">
+
             <div class="mb-3">
               <label for="email" class="form-label">Email</label>
               <input type="email" name="email" class="form-control" id="loginEmail" placeholder="Entrez votre email" required>
@@ -1038,6 +1043,21 @@
     </div>
   </div>
 </div>
+
+<!-- ✅ TOAST Neige & Soleil -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+  <div id="neigeToast" class="toast text-white bg-dark border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex align-items-center">
+      <img src="assets/img/LOGO_NS.png" alt="Neige & Soleil" width="30" height="30" class="me-2 ms-2">
+      <div class="toast-body">
+        ✅ Réservation confirmée avec succès !
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Fermer"></button>
+    </div>
+  </div>
+</div>
+
+
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -1181,7 +1201,7 @@
   <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
 
   <!-- Main JS File -->
-  <script src="assets/js/main.js" defer></script>
+  <script src="assets/js/main.js"></script>
   <script src="assets/js/admin.js" defer></script>
   
 

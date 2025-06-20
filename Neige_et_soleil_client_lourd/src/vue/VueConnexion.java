@@ -114,10 +114,10 @@ public class VueConnexion extends JFrame implements ActionListener, KeyListener 
 
         if (unUtilisateur == null) {
             JOptionPane.showMessageDialog(this, "❌ Identifiants incorrects.", "Erreur", JOptionPane.ERROR_MESSAGE);
+        } else if (!unUtilisateur.getRole().equalsIgnoreCase("admin")) {
+            JOptionPane.showMessageDialog(this, "⚠️ Seul un administrateur peut se connecter.", "Accès refusé", JOptionPane.ERROR_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(this, "✅ Bienvenue, " + unUtilisateur.getNom() + " !", "Connexion réussie", JOptionPane.INFORMATION_MESSAGE);
-
-            // Rendre invisible VueConnexion et ouvrir VueGenerale
             NS.rendreVisibleVueConnexion(false);
             NS.setUtilisateurConnecte(unUtilisateur);
             NS.creerVueGenerale(true);

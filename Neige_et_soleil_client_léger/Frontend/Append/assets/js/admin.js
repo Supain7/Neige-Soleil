@@ -1,18 +1,31 @@
 /**
  * 📌 Démarrage : Vérifie la section active et charge la bonne gestion
- */
-// ✅ Vérification immédiate de l'accès à dashboard.html
-if (window.location.pathname.includes("dashboard.html")) {
+ */if (window.location.pathname.includes("dashboard.html") || window.location.pathname.includes("gestion_reservations.html")) {
     const user = JSON.parse(localStorage.getItem("user"));
-  
     if (!user || user.role !== "admin") {
-      window.location.replace("index.html#contact");
+        // Redirige uniquement si l’utilisateur est sur dashboard et pas déjà en train d’aller vers index.html#contact
+        if (!window.location.href.includes("index.html#contact")) {
+            window.location.replace("index.html#contact");
+        }
     }
-  }
+}
+
+
+
   
 document.addEventListener("DOMContentLoaded", () => {
     console.log("✅ Script admin.js chargé !");
 
+    const adminPages = ["dashboard.html", "gestion_reservations.html", "activites_admin.html", "logements_admin.html"];
+
+adminPages.forEach(page => {
+    if (window.location.pathname.includes(page)) {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user || user.role !== "admin") {
+            window.location.replace("index.html#contact");
+        }
+    }
+});
     // Vérifie la page active en fonction de l'URL
     const currentPage = window.location.pathname.split("/").pop();
 
@@ -34,26 +47,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // Vérifier la connexion de l’utilisateur et effectuer une redirection selon le rôle
-function handleRedirection(elementId, redirectUrl) {
+function handleRedirection(elementId, redirectMap) {
     const element = document.getElementById(elementId);
     if (element) {
-      element.addEventListener("click", (e) => {
-        e.preventDefault();
-  
-        const user = JSON.parse(localStorage.getItem("user"));
-        if (!user) {
-          alert("Vous devez être connecté !");
-          window.location.href = "login.html";
-          return;
-        }
-  
-        // Redirection selon le rôle
-        window.location.href = redirectUrl;
-      });
+        element.addEventListener("click", (e) => {
+            e.preventDefault();
+
+            const user = JSON.parse(localStorage.getItem("user"));
+
+            const redirectUrl = redirectMap[user.role];
+            if (redirectUrl) {
+                window.location.href = redirectUrl;
+            } 
+        });
     }
-  }
+}
+
    // Appels à la fonction générique pour attacher les redirections
-   handleRedirection("guide-touristique", "gestion_reservations.html");
+   handleRedirection("guide-touristique", {
+    client: "services-details.html",
+    proprietaire: "services-details.html",
+    admin: "gestion_reservations.html"
+});
+
    handleRedirection("Assistance", "dashboard.html");
 });
 
@@ -918,7 +934,7 @@ function gererDashboardAdmin() {
     chargerGraphiqueReservationsMois();
     chargerGraphiqueRevenusStation();
     chargerGraphiqueActivitesPopulaires();
-    chargerGraphiqueRevenusSaisonLogement();
+
 
     // Charger les tableaux
     chargerTableauTopClients();
@@ -1006,118 +1022,53 @@ async function chargerGraphiqueReservationsMois() {
 /**
  * 📊 Fonction pour charger le graphique des revenus par station
  */
-async function chargerGraphiqueRevenusStation() {
-    console.log("📊 Chargement du graphique : Revenus par Station...");
-
-    try {
-        const response = await fetch("http://localhost:3000/NeigeEtSoleil_V4/stats/revenus-par-saison-logement");
-        if (!response.ok) throw new Error("Erreur lors du chargement des revenus par station.");
-
-        const data = await response.json();
-        console.log("✅ Données Revenus par Station :", data);
-
-        const stations = data.map(item => item.nom_station);
-        const revenus = data.map(item => item.revenu_total);
-
-        const ctx = document.getElementById("chartRevenusStation").getContext("2d");
-
-// Vérifie si le graphique existe et le détruit s'il est défini
-if (typeof window.chartRevenusStation !== "undefined") {
-  window.chartRevenusStation.destroy();
-}
-
-// Crée un nouveau graphique
-window.chartRevenusStation = new Chart(ctx, {
-  type: "pie",
-  data: {
-    labels: stations,
-    datasets: [{
-      label: "Revenus (€)",
-      data: revenus,
-      backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"],
-    }]
-  },
-  options: {
-    responsive: true
-  }
-});
-
-
-    } catch (error) {
-        console.error("❌ Erreur :", error);
-        alert("Erreur lors du chargement du graphique des revenus par station.");
-    }
-}
-/**
- * 📊 Fonction pour charger le graphique des revenus par station
- */
 window.chartRevenusStation = undefined;
 
 async function chargerGraphiqueRevenusStation() {
-    console.log("📊 Chargement du graphique : Revenus par Station...");
+  console.log("📊 Chargement du graphique : Revenus par Station...");
 
-    try {
-        const response = await fetch("http://localhost:3000/NeigeEtSoleil_V4/stats/revenus-par-saison-logement");
-        if (!response.ok) throw new Error("Erreur lors du chargement des revenus par station.");
+  try {
+    const response = await fetch("http://localhost:3000/NeigeEtSoleil_V4/stats/revenus-par-station", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        date_debut: "2000-01-01",
+        date_fin: "2100-12-31"
+      })
+    });
 
-        const data = await response.json();
-        console.log("✅ Données Revenus par Station :", data);
+    if (!response.ok) throw new Error("Erreur lors du chargement des revenus par station.");
+    const data = await response.json();
+    console.log("✅ Données Revenus par Station :", data);
 
-        data.forEach((item, index) => {
-            console.log(`🔍 Objet ${index + 1}:`, item);
-        });
-        
-        // Vérification des clés
-        if (data.length > 0 && data[0].hasOwnProperty('logement') && data[0].hasOwnProperty('revenu_total')) {
-            const revenusParStation = {};
-        
-            data.forEach(item => {
-                const match = item.logement.match(/Maison\s+([A-Za-z\s\-']+)/);  // Expression régulière pour extraire correctement le nom de la station
-                const station = match ? match[1].trim() : "Inconnu";
-                
-                if (!revenusParStation[station]) {
-                    revenusParStation[station] = 0;
-                }
-                revenusParStation[station] += parseFloat(item.revenu_total) || 0;
-            });
-        
-            const stations = Object.keys(revenusParStation);
-            const revenus = Object.values(revenusParStation);
-        
-            // Générer des couleurs uniques
-            const couleurs = stations.map((_, index) => `hsl(${(index * 360 / stations.length)}, 70%, 60%)`);
-        
-            const ctx = document.getElementById("chartRevenusStation").getContext("2d");
-            if (window.chartRevenusStation) window.chartRevenusStation.destroy();
-            window.chartRevenusStation = new Chart(ctx, {
-                type: "pie",
-                data: {
-                    labels: stations,
-                    datasets: [{
-                        label: "Revenus (€)",
-                        data: revenus,
-                        backgroundColor: couleurs,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                        },
-                    }
-                }
-            });
-        } else {
-            console.warn("⚠️ Données manquantes ou structure inattendue :", data);
-            alert("Les données de revenus par station ne sont pas disponibles.");
+    const stations = data.map(item => item.nom_station);
+    const revenus = data.map(item => item.revenu_total);
+
+    const ctx = document.getElementById("chartRevenusStation").getContext("2d");
+    if (window.chartRevenusStation) window.chartRevenusStation.destroy();
+
+    window.chartRevenusStation = new Chart(ctx, {
+      type: "pie",
+      data: {
+        labels: stations,
+        datasets: [{
+          label: "Revenus (€)",
+          data: revenus,
+          backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"]
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' }
         }
-        
+      }
+    });
 
-    } catch (error) {
-        console.error("❌ Erreur :", error);
-        alert("Erreur lors du chargement du graphique des revenus par station.");
-    }
+  } catch (error) {
+    console.error("❌ Erreur :", error);
+    alert("Erreur lors du chargement des revenus par station.");
+  }
 }
 
 
@@ -1175,63 +1126,6 @@ async function chargerGraphiqueActivitesPopulaires() {
     }
 }
 
-/**
- * 📊 Fonction pour charger le graphique des revenus par saison et logement
- */
-window.chartRevenusSaisonLogement = null;
-async function chargerGraphiqueRevenusSaisonLogement() {
-    console.log("📊 Chargement du graphique : Revenus par Saison et Logement...");
-
-    try {
-        const response = await fetch("http://localhost:3000/NeigeEtSoleil_V4/stats/revenus-par-saison-logement");
-        if (!response.ok) throw new Error("Erreur lors du chargement des revenus par saison et logement.");
-
-        const data = await response.json();
-        console.log("✅ Données Revenus par Saison et Logement :", data);
-
-        // Filtrage des données valides
-        const dataFiltre = data.filter(item => item.nom_saison && item.nom_immeuble);
-
-        const labels = dataFiltre.map(item => `${item.nom_saison} (${item.nom_immeuble})`);
-        console.log("🔍 Données filtrées :", dataFiltre);
-        const revenus = dataFiltre.map(item => parseFloat(item.revenu_total) || 0);
-        console.log("🔍 Revenus :", revenus);
-
-        const ctx = document.getElementById("chartRevenusSaisonLogement").getContext("2d");
-        if (window.chartRevenusSaisonLogement) window.chartRevenusSaisonLogement.destroy();
-        window.chartRevenusSaisonLogement = new Chart(ctx, {
-            type: "line",
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: "Revenu (€)",
-                    data: revenus,
-                    backgroundColor: "rgba(255, 99, 132, 0.6)",
-                    borderColor: "rgba(255, 99, 132, 1)",
-                    fill: false
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: {
-                        ticks: {
-                            maxRotation: 45,
-                            minRotation: 0
-                        }
-                    },
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-
-    } catch (error) {
-        console.error("❌ Erreur :", error);
-        alert("Erreur lors du chargement du graphique des revenus par saison et logement.");
-    }
-}
 
 /**
  * 📋 Fonction pour charger le tableau des Top 5 Clients

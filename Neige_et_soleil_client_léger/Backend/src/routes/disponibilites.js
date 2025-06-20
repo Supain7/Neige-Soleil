@@ -244,19 +244,27 @@
     });
     
 // 📅 **Route : Obtenir les logements disponibles avec les infos de saison**
-// 📅 **Route : Obtenir les logements disponibles avec les infos de saison**
 router.get("/disponibles", async (req, res) => {
-    let { dateDebut, dateFin, ville, type_logement, capaciteAccueil, prixMin, prixMax } = req.query;
+  let {
+    dateDebut,
+    dateFin,
+    ville,
+    type_logement,
+    capaciteAccueil,
+    prixMin,
+    prixMax,
+  } = req.query;
 
-    // Assurer que dateDebut et dateFin ont une valeur par défaut si elles sont absentes
-    if (!dateDebut) {
-        dateDebut = "2000-01-01";  // Une date très ancienne pour ne pas bloquer la requête
-    }
-    if (!dateFin) {
-        dateFin = "2100-12-31";  // Une date très lointaine pour inclure toutes les saisons
-    }
+  const datesFournies = dateDebut && dateFin;
 
-    let sql = `
+  if (!datesFournies) {
+    console.log("⚠️ Aucune date fournie — le calcul du prix total sera ignoré.");
+    // On met des dates factices pour que la requête SQL fonctionne
+    dateDebut = "2000-01-01";
+    dateFin = "2100-12-31";
+  }
+
+  let sql = `
     SELECT 
         l.id_logement, 
         l.nom_immeuble, 
@@ -282,75 +290,85 @@ router.get("/disponibles", async (req, res) => {
         )
         AND s.date_fin >= ? 
         AND s.date_debut <= ?
-    `;
+  `;
 
-    const params = [dateFin, dateDebut, dateFin, dateDebut, dateDebut, dateFin];
+  const params = [dateFin, dateDebut, dateFin, dateDebut, dateDebut, dateFin];
 
-    // Ajout des filtres dynamiques
-    if (ville) {
-        sql += " AND REPLACE(LOWER(TRIM(l.ville)), ' ', '') COLLATE utf8mb4_general_ci = REPLACE(LOWER(TRIM(?)), ' ', '')";
-        params.push(ville);
-    }    
-    if (type_logement) {
-        sql += " AND l.type_logement = ?";
-        params.push(type_logement);
-    }
-    if (capaciteAccueil) {
-        sql += " AND l.capacite_accueil >= ?";
-        params.push(capaciteAccueil);
-    }
-    if (prixMin && prixMax) {
-        sql += " AND t.prix BETWEEN ? AND ?";
-        params.push(prixMin, prixMax);
-    }
+  // Ajout des filtres dynamiques
+  if (ville) {
+    sql +=
+      " AND REPLACE(LOWER(TRIM(l.ville)), ' ', '') COLLATE utf8mb4_general_ci = REPLACE(LOWER(TRIM(?)), ' ', '')";
+    params.push(ville);
+  }
+  if (type_logement) {
+    sql += " AND l.type_logement = ?";
+    params.push(type_logement);
+  }
+  if (capaciteAccueil) {
+    sql += " AND l.capacite_accueil >= ?";
+    params.push(capaciteAccueil);
+  }
+  if (prixMin && prixMax) {
+    sql += " AND t.prix BETWEEN ? AND ?";
+    params.push(prixMin, prixMax);
+  }
 
-    sql += " ORDER BY l.id_logement, s.date_debut;";
+  sql += " ORDER BY l.id_logement, s.date_debut;";
 
-    try {
-        // 🔍 Debugging: Vérifier les paramètres et la requête SQL générée
-        console.log("🔎 Paramètres reçus :", { dateDebut, dateFin, ville, type_logement, capaciteAccueil, prixMin, prixMax });
-        console.log("📌 Requête SQL générée :", sql);
-        console.log("📌 Paramètres SQL envoyés :", params);
+  try {
+    console.log("🔎 Paramètres reçus :", {
+      dateDebut,
+      dateFin,
+      ville,
+      type_logement,
+      capaciteAccueil,
+      prixMin,
+      prixMax,
+    });
+    console.log("📌 Requête SQL générée :", sql);
+    console.log("📌 Paramètres SQL envoyés :", params);
 
-        console.log("📌 Récupération des logements disponibles avec les filtres appliqués...");
-        const [rows] = await db.query(sql, params);
+    const [rows] = await db.query(sql, params);
 
-        // Regrouper les logements par ID et calculer le prix total
-        const logementsMap = new Map();
+    // Regrouper les logements par ID
+    const logementsMap = new Map();
 
-        rows.forEach(row => {
-            if (!logementsMap.has(row.id_logement)) {
-                logementsMap.set(row.id_logement, {
-                    id_logement: row.id_logement,
-                    nom_immeuble: row.nom_immeuble,
-                    adresse: row.adresse,
-                    ville: row.ville,
-                    type_logement: row.type_logement,
-                    surface_habitable: row.surface_habitable,
-                    capacite_accueil: row.capacite_accueil,
-                    specifite: row.specifite,
-                    photo: row.photo,
-                    prix_total: 0,  // Initialisation
-                    saisons: []
-                });
-            }
-            
-            const logement = logementsMap.get(row.id_logement);
-            logement.prix_total += row.jours_dans_saison * row.prix_par_nuit;
-            logement.saisons.push({
-                saison: row.saison_nom,
-                jours: row.jours_dans_saison,
-                prix_par_nuit: row.prix_par_nuit
-            });
+    rows.forEach((row) => {
+      if (!logementsMap.has(row.id_logement)) {
+        logementsMap.set(row.id_logement, {
+          id_logement: row.id_logement,
+          nom_immeuble: row.nom_immeuble,
+          adresse: row.adresse,
+          ville: row.ville,
+          type_logement: row.type_logement,
+          surface_habitable: row.surface_habitable,
+          capacite_accueil: row.capacite_accueil,
+          specifite: row.specifite,
+          photo: row.photo,
+          prix_total: 0,
+          saisons: [],
         });
+      }
 
-        res.status(200).json(Array.from(logementsMap.values()));
-    } catch (error) {
-        console.error("❌ Erreur lors de la récupération des logements :", error);
-        res.status(500).json({ error: "Erreur interne du serveur." });
-    }
+      const logement = logementsMap.get(row.id_logement);
+
+      // ✅ On ne calcule le prix et n’ajoute la saison que si dates sont fournies
+      if (datesFournies && row.jours_dans_saison > 0) {
+        logement.prix_total += row.jours_dans_saison * row.prix_par_nuit;
+        logement.saisons.push({
+          saison: row.saison_nom,
+          jours: row.jours_dans_saison,
+          prix_par_nuit: row.prix_par_nuit,
+        });
+      }
+    });
+
+    res.status(200).json(Array.from(logementsMap.values()));
+  } catch (error) {
+    console.error("❌ Erreur lors de la récupération des logements :", error);
+    res.status(500).json({ error: "Erreur interne du serveur." });
+  }
 });
-
 
     // 🕒 **Route : Récupérer les réservations en attente de confirmation**
     router.get("/reservations-en-attente", async (req, res) => {

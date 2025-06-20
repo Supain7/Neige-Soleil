@@ -168,6 +168,6 @@ router.get('/historique-reservations', async (req, res) => {
       res.status(500).json({ error: "Erreur interne du serveur" });
     }
   });
-  
+
 // 🚀 **Exportation du routeur**
 module.exports = router;
